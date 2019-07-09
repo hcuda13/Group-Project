@@ -2,9 +2,6 @@ library(readr)
 library(dplyr)
 library(reshape2)
 
-
-#combined <- read_csv("combineduary 2019.csv")
-
 my_col_types <- cols(
   FL_DATE = col_date(format = ""),
   OP_UNIQUE_CARRIER = col_factor(),
@@ -69,7 +66,7 @@ levels(combined$Carrier)[levels(combined$Carrier) == "NK"] <- "Spirit"
 levels(combined$Carrier)[levels(combined$Carrier) == "OO"] <- "SkyWest"
 levels(combined$Carrier)[levels(combined$Carrier) == "DL"] <- "Delta"
 levels(combined$Carrier)[levels(combined$Carrier) == "YV"] <- "Mesa"
-levels(combined$Carrier)[levels(combined$Carrier) == "EV"] <- "ExpressJey"
+levels(combined$Carrier)[levels(combined$Carrier) == "EV"] <- "ExpressJet"
 levels(combined$Carrier)[levels(combined$Carrier) == "YX"] <- "Republic"
 levels(combined$Carrier)[levels(combined$Carrier) == "UA"] <- "United"
 levels(combined$Carrier)[levels(combined$Carrier) == "WN"] <- "Southwest"
@@ -84,9 +81,6 @@ levels(combined$CancelReason)[levels(combined$CancelReason) == "B"]<- "Weather"
 levels(combined$CancelReason)[levels(combined$CancelReason) == "C"] <- "National Air System"
 levels(combined$CancelReason)[levels(combined$CancelReason) == "D"] <- "Security"
 
-#Need to read library after data import.  Scales interferes with my_col_types read.
-library(ggplot2)
-library(scales)
 
 # select midwest cities with airports.  Note that Chicago has 2 airports, MDW and ORD
 x <- c("Chicago, IL", "Moline, IL", "Rockford, IL", "Peoria, IL", "Cedar Rapids/Iowa City, IA", "Des Moines, IA", "St. Louis, MO", 
@@ -111,75 +105,103 @@ summ3 <- summarise(combined, TotalFlights = n())
 CancelReasonPivot <-dcast(summ3, CancelReason ~ DepAirport, value.var = "TotalFlights", na.rm = TRUE)
 
 
+#subset the combined df to only midwestern departure states / mda = midwest departure airports (Stephanie)
+mda <- subset(combined, subset = DepState == "ND" | DepState == "SD" |  DepState == "NE" |  DepState == "MN" |
+                     DepState == "IA" | DepState == "MO" | DepState == "WI" |DepState == "IL" |
+                     DepState == "KS" | DepState == "MI" | DepState == "IN" | DepState == "OH")
 
+#If Nevada arrivals are desired, uncomment the below code to subset the combined df to Nevada arrival state.
 #combined <- subset(combined, ArrState == "NV")
-ungroup(combined)
-combined$ArrStatus <- NA
-combined$ArrStatus[combined$ArrDelay <= 0] <- "On Time"
-combined$ArrStatus[combined$ArrDelay > 0] <- "Late"
-combined$ArrStatus[combined$Cancelled == 1] <- "Cancelled"
-combined$ArrStatus <- factor(combined$ArrStatus, levels = c("On Time", "Late", "Cancelled"))
-levels(combined$ArrStatus)
 
+#Create a new factor column called ArrStatus that describes the flight's arrival status as "On Time", "Late" or "Cancelled".
+ungroup(mda)
+mda$ArrStatus <- NA
+mda$ArrStatus[mda$ArrDelay <= 0] <- "On Time"
+mda$ArrStatus[mda$ArrDelay > 0] <- "Late"
+mda$ArrStatus[mda$Cancelled == 1] <- "Cancelled"
+mda$ArrStatus <- factor(mda$ArrStatus, levels = c("On Time", "Late", "Cancelled"))
+levels(mda$ArrStatus)
 
-combinedtmp <- group_by(combined, Carrier, ArrStatus)
-summ4 <- summarize(combinedtmp, num_late = n())
-ArrStatusPivot <- dcast(summ4, Carrier ~ ArrStatus, value.var = "num_late")
+#Pivot table displaying how many "On Time", "Late" or "Cancelled" *arrival* flights in the Nov-Feb time period by airline.
+mdatmp <- group_by(mda, Carrier, ArrStatus)
+summtmp <- summarize(mdatmp, num_late = n())
+ArrStatusPivot <- dcast(summtmp, Carrier ~ ArrStatus, value.var = "num_late")
 
-ungroup(combined)
-combined$DepStatus <- NA
-combined$DepStatus[combined$DepDelay <= 0] <- "On Time"
-combined$DepStatus[combined$DepDelay > 0] <- "Late"
-combined$DepStatus[combined$Cancelled == 1] <- "Cancelled"
-combined$DepStatus <- factor(combined$DepStatus, levels = c("On Time", "Late", "Cancelled"))
-levels(combined$DepStatus)
+#Create a new factor column called DepStatus that describes the flight's departure status as "On Time", "Late" or "Cancelled".
+mda$DepStatus <- NA
+mda$DepStatus[mda$DepDelay <= 0] <- "On Time"
+mda$DepStatus[mda$DepDelay > 0] <- "Late"
+mda$DepStatus[mda$Cancelled == 1] <- "Cancelled"
+mda$DepStatus <- factor(mda$DepStatus, levels = c("On Time", "Late", "Cancelled"))
+levels(mda$DepStatus)
 
+#Pivot table displaying how many "On Time", "Late" or "Cancelled" *departure* flights in the Nov-Feb time period by airport.
+ungroup(mda)
+mdatmp2 <- group_by(mda, DepAirport, DepStatus)
+summtmp2 <- summarize(mdatmp2, num_delay = n())
+DepStatusPivot <- dcast(summtmp2, DepAirport ~ DepStatus, value.var = "num_delay")
 
-combinedtmp2 <- group_by(combined, DepAirport, DepStatus)
-summ5 <- summarize(combinedtmp2, num_delay = n())
-DepStatusPivot <- dcast(summ5, DepAirport ~ DepStatus, value.var = "num_delay")
+#Pivot table displaying how many "On Time", "Late" or "Cancelled" *departure* flights in the Nov-Feb time period by carrier.
+ungroup(mda)
+mdatmp3 <- group_by(mda, Carrier, DepStatus)
+summtmp3 <- summarize(mdatmp3, num_delay = n())
+CarrierStatusPivot <- dcast(summtmp3, Carrier ~ DepStatus, value.var = "num_delay")
 
-ungroup(combined)
-combinedtmp3 <- group_by(combined, Carrier, DepStatus)
-summ6 <- summarize(combinedtmp3, num_delay = n())
-CarrierStatusPivot <- dcast(summ6, Carrier ~ DepStatus, value.var = "num_delay")
+#ungroup(mda)
+#mda$DelayCause <- NA
+#mda$DelayCause[mda$CarrierDelay > 0] <- "Carrier"
+#mda$DelayCause[mda$WeatherDelay > 0] <- "Weather"
+#mda$DelayCause[mda$NASDelay > 0] <- "NAS"
+#mda$DelayCause[mda$SecurityDelay > 0] <- "Security"
+#mda$DelayCause[mda$LateAircraftDelay > 0] <- "Late Aircraft"
+#mda$DelayCause <- factor(mda$DelayCause)
+#levels(mda$DelayCause)
 
-ungroup(combined)
-combined$DelayCause <- NA
-combined$DelayCause[combined$CarrierDelay > 0] <- "Carrier"
-combined$DelayCause[combined$WeatherDelay > 0] <- "Weather"
-#combined$DelayCause[combined$NASDelay > 0] <- "NAS"
-combined$DelayCause[combined$SecurityDelay > 0] <- "Security"
-combined$DelayCause[combined$LateAircraftDelay > 0] <- "Late Aircraft"
-combined$DelayCause <- factor(combined$DelayCause)
-levels(combined$DelayCause)
+#Create a new factor column that displays the date by month in the order: Nov, Dec, Jan, Feb.
+mda$Date <- months(mda$Date)
+mda$Date[mda$Date == "November"] <- "Nov"
+mda$Date[mda$Date == "December"] <- "Dec"
+mda$Date[mda$Date == "January"] <- "Jan"
+mda$Date[mda$Date == "February"] <- "Feb"
+mda$Date <- factor(mda$Date, levels = c("Nov", "Dec", "Jan", "Feb"))
+levels(mda$Date)
 
-combined$Date <- months(combined$Date)
-combined$Date[combined$Date == "November"] <- "Nov"
-combined$Date[combined$Date == "December"] <- "Dec"
-combined$Date[combined$Date == "January"] <- "Jan"
-combined$Date[combined$Date == "February"] <- "Feb"
-combined$Date <- factor(combined$Date, levels = c("Nov", "Dec", "Jan", "Feb"))
-levels(combined$Date)
+#Pivot table displaying the number of flights by carrier by month.
+mdatmp4 <- group_by(mda, Date, Carrier)
+summtmp4 <- summarize(mdatmp4, num_flights = n())
+FlightsbyCarrierPivot <- dcast(summtmp4, Carrier ~ Date, value.var = "num_flights")
 
-combinedtmp4 <- group_by(combined, Date, Carrier)
-summ7 <- summarize(combinedtmp4, num_flights = n())
-FlightsbyCarrierPivot <- dcast(summ7, Carrier ~ Date, value.var = "num_flights")
+#Pivot table displaying the number of flights at each of the airports by carrier.
+ungroup(mda)
+mdatmp5 <- group_by(mda, DepAirport, Carrier)
+summtmp5 <- summarize(mdatmp5, num_flights = n())
+AirportsbyCarrierPivot <- dcast(summtmp5, DepAirport ~ Carrier, value.var = "num_flights")
 
-ungroup(combined)
-combinedtmp5 <- group_by(combined, DepAirport, Carrier)
-summ8 <- summarize(combinedtmp5, num_flights = n())
-AirportsbyCarrierPivot <- dcast(summ8, DepAirport ~ Carrier, value.var = "num_flights")
+#Pivot table displaying the number of flights at each of the airports.
+ungroup(mda)
+mdatmp6 <- group_by(mda, DepAirport, Date)
+summtmp6 <- summarize(mdatmp6, num_flights = n())
+FlightsbyAirportPivot <- dcast(summtmp6, DepAirport ~ Date, value.var = "num_flights")
 
-ungroup(combined)
-combinedtmp6 <- group_by(combined, DepAirport, Date)
-summ9 <- summarize(combinedtmp6, num_flights = n())
-FlightsbyAirportPivot <- dcast(summ9, DepAirport ~ Date, value.var = "num_flights")
+#Need to read library after data import.  Scales interferes with my_col_types read.
+library(ggplot2)
+library(scales)
 
-#p <- qplot(DepAirport, DepStatus, data = combined,  geom = "bin2d")
+#p <- qplot(DepAirport, DepStatus, data = mda,  geom = "bin2d")
 #print(p)
 
-p2 <- qplot(Date, DepStatus, data = combined,  geom = "bin2d") + scale_y_discrete(name = "Departure Status")
+#Plot dispalying the count of "On Time", "Late" and "Cancelled" departure flights by month.
+p2 <- qplot(Date, DepStatus, data = mda,  geom = "bin2d") + scale_y_discrete(name = "Departure Status")
 p2 <- p2 + ggtitle("Departure Status")
 p2 <- p2 + scale_color_gradient(labels = comma)
 print(p2)
+
+#Plot dispalying the count of "On Time", "Late" and "Cancelled" arrival flights by month.
+p3 <- qplot(Date, ArrStatus, data = mda,  geom = "bin2d") + scale_y_discrete(name = "Arrival Status")
+p3 <- p3 + ggtitle("Arrival Status")
+p3 <- p3 + scale_color_gradient(labels = comma)
+print(p3)
+#NA in arrival status indicates that no arrival delay was categorized and the arrival delay is unknown.
+
+
+
