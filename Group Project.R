@@ -203,5 +203,11 @@ p3 <- p3 + scale_color_gradient(labels = comma)
 print(p3)
 #NA in arrival status indicates that no arrival delay was categorized and the arrival delay is unknown.
 
-
+#Plot displaying the count of flights by state by month.
+p4 <- qplot(DepState, data = mda, geom = "bar", fill = DepStatus, facets = .~ Date)
+p4 <- p4 + ggtitle("Count of Flights by State and Month")
+#p4 <- p4 + scale_x_discrete(name = "Departure State")
+#p4 <- p4 + scale_y_discrete(name = "Count of Flights", limits = c(0, 5000))
+print(p4)
+ggsave(filename = "Count of Flights by State and Month.png", plot = p4, width = 6, height = 4,dpi = 600)
 
