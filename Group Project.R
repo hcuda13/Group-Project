@@ -91,33 +91,11 @@ levels(combined$CancelReason)[levels(combined$CancelReason) == "C"] <- "National
 levels(combined$CancelReason)[levels(combined$CancelReason) == "D"] <- "Security"
 
 
-# select midwest cities with airports.  Note that Chicago has 2 airports, MDW and ORD
-x <- c("Chicago, IL", "Moline, IL", "Rockford, IL", "Peoria, IL", "Cedar Rapids/Iowa City, IA", "Des Moines, IA", "St. Louis, MO", 
-       "Minneapolis, MN", "Detroit, MI")
-combined <- filter(combined, DepCity == x)
-
-#Find the average arrival delay for flight
-combined <- group_by(combined, DepCity, ArrCity) 
-summ <- summarise(combined, TotalFlights = n(), AvgDepDelay = round(mean(DepDelay)), AvgArrDelay = round(mean(ArrDelay)))
-AvgArrDelayPivot <-dcast(summ, ArrCity ~ DepCity, value.var = "AvgArrDelay")    
-
-# find average arrival delay by cities and airports and Carriers
-ungroup(combined)
-combined <- group_by(combined, DepAirport, Carrier)
-summ2 <- summarise(combined, TotalFlights = n(), AvgDepDelay = round(mean(DepDelay)), AvgArrDelay = round(mean(ArrDelay)))
-ArrDelayCityAirport <-dcast(summ2, Carrier ~ DepAirport, value.var = "AvgArrDelay")   
-
-# find cancelled flights
-ungroup(combined)
-combined <- group_by(combined, DepAirport, CancelReason)
-summ3 <- summarise(combined, TotalFlights = n())
-CancelReasonPivot <-dcast(summ3, CancelReason ~ DepAirport, value.var = "TotalFlights", na.rm = TRUE)
-
-
+###########################################################################################################################
 #subset the combined df to only midwestern departure states into a new df called mda. mda = midwest departure airports (Stephanie)
 mda <- subset(combined, subset = DepState == "ND" | DepState == "SD" |  DepState == "NE" |  DepState == "MN" |
-                     DepState == "IA" | DepState == "MO" | DepState == "WI" |DepState == "IL" |
-                     DepState == "KS" | DepState == "MI" | DepState == "IN" | DepState == "OH")
+                DepState == "IA" | DepState == "MO" | DepState == "WI" |DepState == "IL" |
+                DepState == "KS" | DepState == "MI" | DepState == "IN" | DepState == "OH")
 
 #If Nevada arrivals are desired, uncomment the below code to subset the mda df to Nevada arrival state.
 #combined <- subset(combined, ArrState == "NV")
@@ -220,4 +198,126 @@ p3 <- p3 + ggtitle("Arrival Status")
 p3 <- p3 + scale_color_gradient(labels = comma)
 print(p3)
 #NA in arrival status indicates that no arrival delay was categorized and the arrival delay is unknown.
+
+####################################### Tarun code below ###################################################
+
+# From the master combined dataframe creating a 3 sub dataframe with data respective 
+# airports related to desmoines, quad cities and cedar rapids.
+# Among those three airport trying to figure out which airport by airlines are higher/lower departures % chance on ontime/cancel/late 
+
+# subseting the data frame to just demoines airport
+dsm <- subset(mda, DepAirport == "DSM")
+
+# subseting the data frame to just moline/quad cities airport
+mli <- subset(mda, DepAirport == "MLI")
+
+# subseting the data frame to just cedar arpids airport
+cid <- subset(mda, DepAirport == "CID")
+
+#Pivot table displaying desmoines airport Depature airline status
+dsm_tmp2 <- group_by(dsm, Carrier, DepStatus)
+dsm_summ2 <- summarize(dsm_tmp2, num_delay = n())
+dsm_DepStatusPivot <- dcast(dsm_summ2, Carrier ~ DepStatus, value.var = "num_delay")
+
+# Replacing the NA's data in dsm_DepStatusPivot with 0's 
+complete.cases(dsm_DepStatusPivot)
+dsm_DepStatusPivot[is.na(dsm_DepStatusPivot)] <- 0
+
+# changing the Carrier column to factor
+dsm_DepStatusPivot$Carrier <- factor(dsm_DepStatusPivot$Carrier)
+levels(dsm_DepStatusPivot$Carrier)
+
+
+# Adding new rows with % on on ontime/cancel/late for desmoines
+dsm_DepStatusPivot$OnTime_per <- ((dsm_DepStatusPivot$`On Time`)/(dsm_DepStatusPivot$`On Time` + dsm_DepStatusPivot$Late + dsm_DepStatusPivot$Cancelled))*100
+dsm_DepStatusPivot$Late_per <- ((dsm_DepStatusPivot$Late)/(dsm_DepStatusPivot$`On Time` + dsm_DepStatusPivot$Late + dsm_DepStatusPivot$Cancelled))*100
+dsm_DepStatusPivot$Cancelled_per <- ((dsm_DepStatusPivot$Cancelled)/(dsm_DepStatusPivot$`On Time`+ dsm_DepStatusPivot$Late + dsm_DepStatusPivot$Cancelled))*100
+
+#Pivot table displaying quard cities airport Depature airline status
+mli_tmp2 <- group_by(mli, Carrier, DepStatus)
+mli_summ2 <- summarize(mli_tmp2, num_delay = n())
+mli_DepStatusPivot <- dcast(mli_summ2, Carrier ~ DepStatus, value.var = "num_delay")
+
+# Replacing the NA's data in mli_DepStatusPivot with 0's 
+complete.cases(mli_DepStatusPivot)
+mli_DepStatusPivot[is.na(mli_DepStatusPivot)] <- 0
+
+# changing the Carrier column to factor
+mli_DepStatusPivot$Carrier <- factor(mli_DepStatusPivot$Carrier)
+levels(mli_DepStatusPivot$Carrier)
+
+# Adding new rows with % on on ontime/cancel/late for moline
+mli_DepStatusPivot$OnTime_per <- ((mli_DepStatusPivot$`On Time`)/(mli_DepStatusPivot$`On Time` + mli_DepStatusPivot$Late + mli_DepStatusPivot$Cancelled))*100
+mli_DepStatusPivot$Late_per <- ((mli_DepStatusPivot$Late)/(mli_DepStatusPivot$`On Time` + mli_DepStatusPivot$Late + mli_DepStatusPivot$Cancelled))*100
+mli_DepStatusPivot$Cancelled_per <- ((mli_DepStatusPivot$Cancelled)/(mli_DepStatusPivot$`On Time`+ mli_DepStatusPivot$Late + mli_DepStatusPivot$Cancelled))*100
+
+
+#Pivot table displaying cedar rapids airport Depature airline status
+cid_tmp2 <- group_by(cid, Carrier, DepStatus)
+cid_summ2 <- summarize(cid_tmp2, num_delay = n())
+cid_DepStatusPivot <- dcast(cid_summ2, Carrier ~ DepStatus, value.var = "num_delay")
+
+# Replacing the NA's data in mli_DepStatusPivot with 0's 
+complete.cases(cid_DepStatusPivot)
+cid_DepStatusPivot[is.na(cid_DepStatusPivot)] <- 0
+
+# changing the Carrier column to factor
+cid_DepStatusPivot$Carrier <- factor(cid_DepStatusPivot$Carrier)
+levels(cid_DepStatusPivot$Carrier)
+
+# Adding new rows with % on on ontime/cancel/late for cedar rapids
+cid_DepStatusPivot$OnTime_per <- ((cid_DepStatusPivot$`On Time`)/(cid_DepStatusPivot$`On Time` + cid_DepStatusPivot$Late + cid_DepStatusPivot$Cancelled))*100
+cid_DepStatusPivot$Late_per <- ((cid_DepStatusPivot$Late)/(cid_DepStatusPivot$`On Time` + cid_DepStatusPivot$Late + cid_DepStatusPivot$Cancelled))*100
+cid_DepStatusPivot$Cancelled_per <- ((cid_DepStatusPivot$Cancelled)/(cid_DepStatusPivot$`On Time`+ cid_DepStatusPivot$Late + cid_DepStatusPivot$Cancelled))*100
+
+# loading library
+suppressPackageStartupMessages(library(ggplot2))
+library(scales)
+
+# Below plot is just for checking to see if working or not before including into the function
+p5 <- qplot(OnTime_per, data = cid_DepStatusPivot, geom = "histogram", binwidth = 0.1, log = "x",fill = Carrier)
+print(p5)
+
+# Function creating a qplot on airlines with % chance of not deporting on time
+
+DepStatus_plot<- function(table = '', row = '') {
+  
+  p5 <- qplot(row, data = table, geom = "histogram", binwidth = 0.1, log = "x",fill = Carrier)
+  print(p5)
+  
+  ggsave(filename = "table.png", plot = p5, width = 10, height = 6,dpi = 600)
+  
+  
+}
+
+DepStatus_plot(table == "cid_DepStatusPivot", row == "OnTime_per")
+
+
+
+
+############################################### Heidi code below ####################################################
+
+# select midwest cities with airports.  Note that Chicago has 2 airports, MDW and ORD
+x <- c("Chicago, IL", "Moline, IL", "Rockford, IL", "Peoria, IL", "Cedar Rapids/Iowa City, IA", "Des Moines, IA", "St. Louis, MO", 
+       "Minneapolis, MN", "Detroit, MI")
+combined <- filter(combined, DepCity == x)
+
+#Find the average arrival delay for flight
+combined <- group_by(combined, DepCity, ArrCity) 
+summ <- summarise(combined, TotalFlights = n(), AvgDepDelay = round(mean(DepDelay)), AvgArrDelay = round(mean(ArrDelay)))
+AvgArrDelayPivot <-dcast(summ, ArrCity ~ DepCity, value.var = "AvgArrDelay")    
+
+# find average arrival delay by cities and airports and Carriers
+ungroup(combined)
+combined <- group_by(combined, DepAirport, Carrier)
+summ2 <- summarise(combined, TotalFlights = n(), AvgDepDelay = round(mean(DepDelay)), AvgArrDelay = round(mean(ArrDelay)))
+ArrDelayCityAirport <-dcast(summ2, Carrier ~ DepAirport, value.var = "AvgArrDelay")   
+
+# find cancelled flights
+ungroup(combined)
+combined <- group_by(combined, DepAirport, CancelReason)
+summ3 <- summarise(combined, TotalFlights = n())
+CancelReasonPivot <-dcast(summ3, CancelReason ~ DepAirport, value.var = "TotalFlights", na.rm = TRUE)
+
+
 
