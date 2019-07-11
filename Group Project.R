@@ -125,6 +125,30 @@ mda$Date[mda$Date == "February"] <- "Feb"
 mda$Date <- factor(mda$Date, levels = c("Nov", "Dec", "Jan", "Feb"))
 levels(mda$Date)
 
+#Determine the airports that are most on-time
+PercentofDepStatus <- (table(mda$DepAirport, mda$DepStatus)/rowSums(table(mda$DepAirport, mda$DepStatus))) * 100
+PercentofDepStatus <- as.data.frame(PercentofDepStatus)
+names(PercentofDepStatus)[names(PercentofDepStatus) == "Var1"] <- "DepAirport"
+names(PercentofDepStatus)[names(PercentofDepStatus) == "Var2"] <- "DepStatus"
+PercentofDepStatus <- subset(PercentofDepStatus, Freq != "NaN")
+PDS <- PercentofDepStatus %>%
+  ungroup() %>%
+  mutate(rnFreq = row_number(desc(Freq))) %>%
+  select("DepAirport", "DepStatus", "Freq") %>%
+  arrange(desc(Freq))
+
+#Determine the carriers that are most on-time
+PercentofCarrierArrStatus <- (table(mda$Carrier, mda$ArrStatus) /rowSums(table(mda$Carrier, mda$ArrStatus))) * 100
+PercentofCarrierArrStatus <- as.data.frame(PercentofCarrierArrStatus)
+names(PercentofCarrierArrStatus)[names(PercentofCarrierArrStatus) == "Var1"] <- "Carrier"
+names(PercentofCarrierArrStatus)[names(PercentofCarrierArrStatus) == "Var2"] <- "ArrStatus"
+PercentofCarrierArrStatus <- subset(PercentofCarrierArrStatus, Freq != "NaN")
+PCAS <- PercentofCarrierArrStatus %>%
+  ungroup() %>%
+  mutate(rnFreq = row_number(desc(Freq))) %>%
+  select("Carrier", "ArrStatus", "Freq") %>%
+  arrange(desc(Freq))
+
 #Load ggplot2 and scales libraries after data import.  Scales interferes with my_col_types read.
 library(ggplot2)
 library(scales)
