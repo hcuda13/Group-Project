@@ -226,16 +226,15 @@ Airport <- function(airport= "") {
   return(airport)
 }
 
+# subseting the data frame to just Des Moines cities airport
 Airport("DSM")
 dsm <- Airport("DSM")
-
-
 
 # subseting the data frame to just moline/quad cities airport
 Airport("MLI")
 mli <- Airport("MLI")
 
-# subseting the data frame to just cedar arpids airport
+# subseting the data frame to just cedar rapids airport
 Airport("MLI")
 cid <- Airport("MLI")
 
@@ -251,7 +250,6 @@ dsm_DepStatusPivot[is.na(dsm_DepStatusPivot)] <- 0
 # changing the Carrier column to factor
 dsm_DepStatusPivot$Carrier <- factor(dsm_DepStatusPivot$Carrier)
 levels(dsm_DepStatusPivot$Carrier)
-
 
 # Adding new rows with % on on ontime/cancel/late for desmoines
 dsm_DepStatusPivot$OnTime_per <- ((dsm_DepStatusPivot$`On Time`)/(dsm_DepStatusPivot$`On Time` + dsm_DepStatusPivot$Late + dsm_DepStatusPivot$Cancelled))*100
@@ -275,7 +273,6 @@ levels(mli_DepStatusPivot$Carrier)
 mli_DepStatusPivot$OnTime_per <- ((mli_DepStatusPivot$`On Time`)/(mli_DepStatusPivot$`On Time` + mli_DepStatusPivot$Late + mli_DepStatusPivot$Cancelled))*100
 mli_DepStatusPivot$Late_per <- ((mli_DepStatusPivot$Late)/(mli_DepStatusPivot$`On Time` + mli_DepStatusPivot$Late + mli_DepStatusPivot$Cancelled))*100
 mli_DepStatusPivot$Cancelled_per <- ((mli_DepStatusPivot$Cancelled)/(mli_DepStatusPivot$`On Time`+ mli_DepStatusPivot$Late + mli_DepStatusPivot$Cancelled))*100
-
 
 #Pivot table displaying cedar rapids airport Depature airline status
 cid_tmp2 <- group_by(cid, Carrier, DepStatus)
@@ -306,11 +303,36 @@ ggsave(filename = "CedarRapidsOnTime.png", plot = p5, width = 6, height = 4, dpi
 
 # p5 <- p5 + scale_y_discrete(name = "On Time %", limits = c(0, 100))
 
-# Plot dispalying the Cedar Rapids late by Carrier. 
+# Plot dispalying the Cedar Rapids late departure by Carrier.
 p6 <- qplot(Carrier,Late_per, data = cid_DepStatusPivot, geom = "point", color = Carrier,size = I(4))
 p6 <- p6 + ggtitle("Cedar Rapids late departure by Carrier")
 print(p6)
 ggsave(filename = "CedarRapidsLate.png", plot = p6, width = 6, height = 4, dpi = 600)
+
+# Plot dispalying the Desmoines on time departure by Carrier. 
+p7 <- qplot(Carrier,OnTime_per, data = dsm_DepStatusPivot, geom = "point", color = Carrier,size = I(4))
+p7 <- p7 + ggtitle("Desmoines on time departure by Carrier")
+print(p7)
+ggsave(filename = "DesmoinesOnTime.png", plot = p7, width = 10, height = 6, dpi = 600)
+
+# Plot dispalying the Desmoines late departure by Carrier. 
+p8 <- qplot(Carrier,Late_per, data = dsm_DepStatusPivot, geom = "point", color = Carrier,size = I(4))
+p8 <- p8 + ggtitle("Desmoines late departure by Carrier")
+print(p8)
+ggsave(filename = "DesmoinesLate.png", plot = p8, width = 10, height = 6, dpi = 600)
+
+# Plot dispalying the Moline on time departure by Carrier. 
+p9 <- qplot(Carrier,OnTime_per, data = mli_DepStatusPivot, geom = "point", color = Carrier,size = I(4))
+p9 <- p9 + ggtitle("Moline on time departure by Carrier")
+print(p9)
+ggsave(filename = "MolineOnTime.png", plot = p9, width = 6, height = 4, dpi = 600)
+
+# Plot dispalying the Moline late departure by Carrier. 
+p10 <- qplot(Carrier,Late_per, data = mli_DepStatusPivot, geom = "point", color = Carrier,size = I(4))
+p10 <- p10 + ggtitle("Moline late departure by Carrier")
+print(p10)
+ggsave(filename = "MolineLate.png", plot = p10, width = 6, height = 4, dpi = 600)
+
 
 ############################################### Heidi code below ####################################################
 
