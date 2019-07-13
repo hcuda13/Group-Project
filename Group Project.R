@@ -302,9 +302,15 @@ suppressPackageStartupMessages(library(ggplot2))
 p5 <- qplot(Carrier,OnTime_per, data = cid_DepStatusPivot, geom = "point", color = Carrier,size = I(4))
 p5 <- p5 + ggtitle("Cedar Rapids on time departure by Carrier")
 print(p5)
-ggsave(filename = "CedarRapids.png", plot = p5, width = 6, height = 4, dpi = 600)
+ggsave(filename = "CedarRapidsOnTime.png", plot = p5, width = 6, height = 4, dpi = 600)
 
 # p5 <- p5 + scale_y_discrete(name = "On Time %", limits = c(0, 100))
+
+# Plot dispalying the Cedar Rapids late by Carrier. 
+p6 <- qplot(Carrier,Late_per, data = cid_DepStatusPivot, geom = "point", color = Carrier,size = I(4))
+p6 <- p6 + ggtitle("Cedar Rapids late departure by Carrier")
+print(p6)
+ggsave(filename = "CedarRapidsLate.png", plot = p6, width = 6, height = 4, dpi = 600)
 
 ############################################### Heidi code below ####################################################
 
