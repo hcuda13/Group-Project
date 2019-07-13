@@ -151,7 +151,7 @@ PCAS <- PercentofCarrierArrStatus %>%
 
 #Load ggplot2 and scales libraries after data import.  Scales interferes with my_col_types read.
 library(ggplot2)
-library(scales)
+# library(scales)
 
 #Plot displaying the count of flights by state by month.
 p4 <- qplot(DepState, data = mda, geom = "bar", fill = DepStatus, facets = .~ Date)
@@ -178,16 +178,6 @@ ungroup(mda)
 mdatmp3 <- group_by(mda, Carrier, DepStatus)
 summtmp3 <- summarize(mdatmp3, num_delay = n())
 CarrierStatusPivot <- dcast(summtmp3, Carrier ~ DepStatus, value.var = "num_delay")
-
-#ungroup(mda)
-#mda$DelayCause <- NA
-#mda$DelayCause[mda$CarrierDelay > 0] <- "Carrier"
-#mda$DelayCause[mda$WeatherDelay > 0] <- "Weather"
-#mda$DelayCause[mda$NASDelay > 0] <- "NAS"
-#mda$DelayCause[mda$SecurityDelay > 0] <- "Security"
-#mda$DelayCause[mda$LateAircraftDelay > 0] <- "Late Aircraft"
-#mda$DelayCause <- factor(mda$DelayCause)
-#levels(mda$DelayCause)
 
 #Pivot table displaying the number of flights by carrier by month.
 mdatmp4 <- group_by(mda, Date, Carrier)
@@ -229,14 +219,25 @@ print(p3)
 # airports related to desmoines, quad cities and cedar rapids.
 # Among those three airport trying to figure out which airport by airlines are higher/lower departures % chance on ontime/cancel/late 
 
-# subseting the data frame to just demoines airport
-dsm <- subset(mda, DepAirport == "DSM")
+# Function to subseting the data frame by searching with specific airport
+
+Airport <- function(airport= "") {
+  airport <- as.data.frame(subset(mda, DepAirport == airport))
+  return(airport)
+}
+
+Airport("DSM")
+dsm <- Airport("DSM")
+
+
 
 # subseting the data frame to just moline/quad cities airport
-mli <- subset(mda, DepAirport == "MLI")
+Airport("MLI")
+mli <- Airport("MLI")
 
 # subseting the data frame to just cedar arpids airport
-cid <- subset(mda, DepAirport == "CID")
+Airport("MLI")
+cid <- Airport("MLI")
 
 #Pivot table displaying desmoines airport Depature airline status
 dsm_tmp2 <- group_by(dsm, Carrier, DepStatus)
@@ -296,28 +297,14 @@ cid_DepStatusPivot$Cancelled_per <- ((cid_DepStatusPivot$Cancelled)/(cid_DepStat
 
 # loading library
 suppressPackageStartupMessages(library(ggplot2))
-library(scales)
 
-# Below plot is just for checking to see if working or not before including into the function
-p5 <- qplot(OnTime_per, data = cid_DepStatusPivot, geom = "histogram", binwidth = 0.1, log = "x",fill = Carrier)
+# Plot dispalying the Cedar Rapids on time departure by Carrier. 
+p5 <- qplot(Carrier,OnTime_per, data = cid_DepStatusPivot, geom = "point", color = Carrier,size = I(4))
+p5 <- p5 + ggtitle("Cedar Rapids on time departure by Carrier")
 print(p5)
+ggsave(filename = "CedarRapids.png", plot = p5, width = 6, height = 4, dpi = 600)
 
-# Function creating a qplot on airlines with % chance of not deporting on time
-
-DepStatus_plot<- function(table = '', row = '') {
-  
-  p5 <- qplot(row, data = table, geom = "histogram", binwidth = 0.1, log = "x",fill = Carrier)
-  print(p5)
-  
-  ggsave(filename = "table.png", plot = p5, width = 10, height = 6,dpi = 600)
-  
-  
-}
-
-DepStatus_plot(table == "cid_DepStatusPivot", row == "OnTime_per")
-
-
-
+# p5 <- p5 + scale_y_discrete(name = "On Time %", limits = c(0, 100))
 
 ############################################### Heidi code below ####################################################
 
