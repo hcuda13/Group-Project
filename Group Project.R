@@ -150,7 +150,7 @@ PCAS <- PercentofCarrierArrStatus %>%
   arrange(desc(Freq))
 
 #Load ggplot2 and scales libraries after data import.  Scales interferes with my_col_types read.
-library(ggplot2)
+suppressPackageStartupMessages(library(ggplot2))
 # library(scales)
 
 #Plot displaying the count of flights by state by month.
@@ -208,7 +208,7 @@ p3 <- p3 + scale_color_gradient(labels = comma)
 print(p3)
 #NA in arrival status indicates that no arrival delay was categorized and the arrival delay is unknown.
 
-####################################### Tarun code below ###################################################
+####################################### Cedar Rapids, Quad Cities, Des Moines airports###################################################
 
 # From the master combined dataframe creating a 3 sub dataframe with data respective 
 # airports related to desmoines, quad cities and cedar rapids.
@@ -233,7 +233,7 @@ mli <- Airport("MLI")
 Airport("MLI")
 cid <- Airport("MLI")
 
-#Pivot table displaying desmoines airport Depature airline status
+#Pivot table displaying desmoines airport Departure airline status
 dsm_tmp2 <- group_by(dsm, Carrier, DepStatus)
 dsm_summ2 <- summarize(dsm_tmp2, num_delay = n())
 dsm_DepStatusPivot <- dcast(dsm_summ2, Carrier ~ DepStatus, value.var = "num_delay")
@@ -251,7 +251,7 @@ dsm_DepStatusPivot$OnTime_per <- ((dsm_DepStatusPivot$`On Time`)/(dsm_DepStatusP
 dsm_DepStatusPivot$Late_per <- ((dsm_DepStatusPivot$Late)/(dsm_DepStatusPivot$`On Time` + dsm_DepStatusPivot$Late + dsm_DepStatusPivot$Cancelled))*100
 dsm_DepStatusPivot$Cancelled_per <- ((dsm_DepStatusPivot$Cancelled)/(dsm_DepStatusPivot$`On Time`+ dsm_DepStatusPivot$Late + dsm_DepStatusPivot$Cancelled))*100
 
-#Pivot table displaying quard cities airport Depature airline status
+#Pivot table displaying quad cities airport Depature airline status
 mli_tmp2 <- group_by(mli, Carrier, DepStatus)
 mli_summ2 <- summarize(mli_tmp2, num_delay = n())
 mli_DepStatusPivot <- dcast(mli_summ2, Carrier ~ DepStatus, value.var = "num_delay")
@@ -287,8 +287,6 @@ cid_DepStatusPivot$OnTime_per <- ((cid_DepStatusPivot$`On Time`)/(cid_DepStatusP
 cid_DepStatusPivot$Late_per <- ((cid_DepStatusPivot$Late)/(cid_DepStatusPivot$`On Time` + cid_DepStatusPivot$Late + cid_DepStatusPivot$Cancelled))*100
 cid_DepStatusPivot$Cancelled_per <- ((cid_DepStatusPivot$Cancelled)/(cid_DepStatusPivot$`On Time`+ cid_DepStatusPivot$Late + cid_DepStatusPivot$Cancelled))*100
 
-# loading library
-suppressPackageStartupMessages(library(ggplot2))
 
 # Plot dispalying the Cedar Rapids on time departure by Carrier. 
 
@@ -296,7 +294,7 @@ p5 <- qplot(Carrier,OnTime_per, data = cid_DepStatusPivot, geom = "point", color
 p5 <- p5 + ggtitle("Cedar Rapids On Time departure by Carrier")
 p5 <- p5 + ylab("Late Depature %")
 print(p5)
-ggsave(filename = "CedarRapidsLate.png", plot = p6, width = 10, height = 6, dpi = 600)
+ggsave(filename = "CedarRapidsLate.png", plot = p5, width = 10, height = 6, dpi = 600)
 
 # Plot dispalying the Cedar Rapids late departure by Carrier.
 p6 <- qplot(Carrier,Late_per, data = cid_DepStatusPivot, geom = "point", color = Carrier,size = I(4))
@@ -335,29 +333,182 @@ print(p10)
 ggsave(filename = "MolineLate.png", plot = p10, width = 10, height = 6, dpi = 600)
 
 
-############################################### Heidi code below ####################################################
+###############################################Orlando ####################################################
 
 # select midwest cities with airports.  Note that Chicago has 2 airports, MDW and ORD
 x <- c("Chicago, IL", "Moline, IL", "Rockford, IL", "Peoria, IL", "Cedar Rapids/Iowa City, IA", "Des Moines, IA", "St. Louis, MO", 
        "Minneapolis, MN", "Detroit, MI")
-combined <- filter(combined, DepCity == x)
+sma <- filter(mda, DepCity == x)
 
 #Find the average arrival delay for flight
-combined <- group_by(combined, DepCity, ArrCity) 
-summ <- summarise(combined, TotalFlights = n(), AvgDepDelay = round(mean(DepDelay)), AvgArrDelay = round(mean(ArrDelay)))
-AvgArrDelayPivot <-dcast(summ, ArrCity ~ DepCity, value.var = "AvgArrDelay")    
+sma <- group_by(sma, DepCity, ArrCity) 
+hc1 <- summarise(sma, TotalFlights = n(), AvgDepDelay = round(mean(DepDelay)), AvgArrDelay = round(mean(ArrDelay)))
+AvgArrDelayPivot <-dcast(hc1, ArrCity ~ DepCity, value.var = "AvgArrDelay")    
 
 # find average arrival delay by cities and airports and Carriers
-ungroup(combined)
-combined <- group_by(combined, DepAirport, Carrier)
-summ2 <- summarise(combined, TotalFlights = n(), AvgDepDelay = round(mean(DepDelay)), AvgArrDelay = round(mean(ArrDelay)))
-ArrDelayCityAirport <-dcast(summ2, Carrier ~ DepAirport, value.var = "AvgArrDelay")   
+ungroup(sma)
+sma <- group_by(sma, DepAirport, Carrier)
+hc2 <- summarise(sma, TotalFlights = n(), AvgDepDelay = round(mean(DepDelay)), AvgArrDelay = round(mean(ArrDelay)))
+ArrDelayCityAirport <-dcast(hc2, Carrier ~ DepAirport, value.var = "AvgArrDelay")   
 
 # find cancelled flights
 ungroup(combined)
-combined <- group_by(combined, DepAirport, CancelReason)
-summ3 <- summarise(combined, TotalFlights = n())
-CancelReasonPivot <-dcast(summ3, CancelReason ~ DepAirport, value.var = "TotalFlights", na.rm = TRUE)
+sma <- group_by(sma, DepAirport, CancelReason)
+hc3 <- summarise(sma, TotalFlights = n())
+CancelReasonPivot <-dcast(hc3, CancelReason ~ DepAirport, value.var = "TotalFlights", na.rm = TRUE)
+
+#Find the average arrival delay for flight
+#find flight info to Orlando, FL
+ungroup(sma)
+ORL <- filter(sma, ArrCity == "Orlando, FL")
+
+#To Orlando find cancel reason by airport
+ORL <- group_by(ORL, DepAirport, CancelReason)
+hcsumm10 <- summarize(ORL, TotalFlights = n())
+ORLCancAirport <- dcast(hcsumm10, DepAirport ~ CancelReason, value.var = "TotalFlights")  
+
+#To Orlando:if flight is delayed, what is the average delay by carrier.  
+ungroup (ORL)
+tmpORL <- filter(ORL, ArrDelay > 0)
+tmpORL <- group_by(tmpORL, DepAirport, Carrier)
+hcsumm11 <- summarize(tmpORL, TotalFlights = n(), AvgDelay = round(mean(ArrDelay)))
+ORLDelays <- dcast (hcsumm11, DepAirport ~ Carrier, value.var = "AvgDelay")
+
+# To Orlando: flights by status Dep Airport
+ungroup(ORL)
+ORL <- group_by(ORL,DepAirport, ArrStatus)
+hcsumm12 <- summarize(ORL, Flights = n())
+ORLStatusAirport <- dcast(hcsumm12, DepAirport ~ ArrStatus, value.var = "Flights")
+
+# To Orlando: flights by status Carrier
+ungroup(ORL)
+ORL <- group_by(ORL, Carrier, ArrStatus)
+hcsumm12 <- summarize(ORL, Flights = n())
+ORLStatusCarrier <- dcast(hcsumm12, Carrier ~ ArrStatus, value.var = "Flights")
+
+# find data from airport and carrier on count of delays
+ungroup(ORL)
+ORL <- group_by(ORL, Carrier, DepAirport, ArrStatus)
+hc13 <- summarize(ORL, Flights = n())
+ORLCarrierDepAIR <- dcast(hc13, Carrier ~ DepAirport, value.var = "Flights")
 
 
+#Arrival Status to Orlando from Departure Airports by Carrier
 
+ungroup(ORL)
+p10 <- qplot(Carrier,  data = ORL, geom = "bar", facets = . ~ DepAirport, fill = ArrStatus)
+p10 <- p10 + ggtitle("To Orlando: Arrival Status by Carrier from Departure Airport")
+p10 <- p10 + xlab("Carrier")
+p10 <- p10 + ylab("Total Flights")
+p10 <- p10 + theme(axis.text.x = element_text(angle = 90, size = 10))
+p10 <- p10 + theme(axis.title.y = element_text(size = 12, face = "bold"))
+p10 <- p10 + theme(axis.title.x = element_text(size = 12, face = "bold"))
+p10 <- p10 + theme(axis.ticks.x = element_blank())
+p10 <- p10 + labs(fill= "Arrival Status")
+p10 <- p10 + theme(legend.title = element_text(size = 12, face = "bold"))
+p10
+
+ggsave(filename = "Orlando: Arrival Status by Carrier from Departure Airport.png", plot = p4, width = 12, height = 8,dpi = 600)
+
+############################### FLight Map to Orlando ############################################################################
+
+#Create new database for fights to ORL and remove columns    
+dfm <- ORL
+
+dfm$Date <- NULL
+dfm$Carrier <- NULL
+dfm$FlightNumber <- NULL
+dfm$DepState <- NULL
+dfm$DepTime <- NULL
+dfm$DepDelay <- NULL
+dfm$ArrTIme <- NULL
+dfm$ArrDelay <- NULL
+dfm$Cancelled <- NULL
+dfm$CancelReason <- NULL
+dfm$CarrierDelay <- NULL
+dfm$WeatherDelay <- NULL
+dfm$NASDelay <- NULL
+dfm$SecurityDelay <- NULL
+dfm$LateAircraftDelay <- NULL
+dfm$ArrStatus <- NULL
+dfm$DepStatus <- NULL
+
+# Airport latitude and longitude data downloaded from Federal Aviation Administration
+#link: http://ais-faa.opendata.arcgis.com/datasets/e747ab91a11045e8b3f8a3efd093d3b5_0
+
+my_col_types2 <-
+  cols(
+    X = col_double(),
+    Y = col_double(),
+    OBJECTID = col_skip(),
+    GLOBAL_ID = col_skip(),
+    IDENT = col_character(),
+    NAME = col_character(),
+    LATITUDE = col_character(),
+    LONGITUDE = col_character(),
+    ELEVATION = col_double(),
+    ICAO_ID = col_skip(),
+    TYPE_CODE = col_skip(),
+    SERVCITY = col_skip(),
+    STATE = col_skip(),
+    COUNTRY = col_skip(),
+    OPERSTATUS = col_skip(),
+    PRIVATEUSE = col_skip(),
+    IAPEXISTS = col_skip(),
+    DODHIFLIP = col_skip(),
+    FAR91 = col_skip(),
+    FAR93 = col_skip(),
+    MIL_CODE = col_skip(),
+    AIRANAL = col_skip(),
+    US_HIGH = col_skip(),
+    US_LOW = col_skip(),
+    AK_HIGH = col_skip(),
+    AK_LOW = col_skip(),
+    US_AREA = col_skip(),
+    PACIFIC = col_skip())
+
+df2 <- read_csv("Airports.csv", col_types = my_col_types2)
+df2<- rename(df2, DepAirport = IDENT)
+
+#Get Orlando Airport coordinates
+MCO <- filter(df2, DepAirport == "MCO")
+#join dfm and df2 on column DepAirport
+Airports <- inner_join(mda, df2)
+
+Airports <- rename(Airports, lon == X, lat = Y)
+# get single flight from each departure airport
+
+Airports <- unique(Airports)
+dfORD <- filter(Airports, DepAirport == "ORD")
+DTW <- filter(Airports, DepAirport == "DTW")
+STL <- filter(Airports, DepAirport == "STL")
+MDW <- filter(Airports, DepAirport == "MDW")
+MSP <- filter(Airports, DepAirport == "MSP")
+DSM <- filter(Airports, DepAirport == "DSM")
+
+# Information about mapping and code for base map downloaded from website: 
+#https://www.gis-blog.com/flight-connection-map-with-r/
+
+#install.packages("maps")
+#install.packages("geosphere")
+suppressPackageStartupMessages(library(maps))
+suppressPackageStartupMessages(library(geosphere))
+#install.packages("ggmap")
+suppressPackageStartupMessages(library(ggmap))
+#install.packages("mapdata")
+suppressPackageStartupMessages(library(mapdata))
+
+#create basemap
+dev.off()
+par(mar=c(0,0,0,0))
+p11 <-map("world", regions=c("usa"), fill=T, col="grey8", bg="grey15", ylim=c(21.0,50.0), xlim=c(-130.0,-65.0))
+
+#overlay airports
+p11 <- p11 + points(Airports$X,Airports$Y, pch= 1, cex = 0.1, col = "chocolate1")
+
+#flights from midwest states to Orlando, Fl.
+p11<- p11 + for (i in (1:dim(Airports)[1])) { 
+  inter <- gcIntermediate(c(MCO$X[1],  MCO$Y[1]), c(Airports$X[i],Airports$Y[i]), n=200)
+  lines(inter, lwd=0.005, col="turquoise2")    
+}
+#to save use export tab in plot window
