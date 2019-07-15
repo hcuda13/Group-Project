@@ -151,7 +151,7 @@ PCAS <- PercentofCarrierArrStatus %>%
 
 #Load ggplot2 and scales libraries after data import.  Scales interferes with my_col_types read.
 suppressPackageStartupMessages(library(ggplot2))
-# library(scales)
+library(scales)
 
 #Plot displaying the count of flights by state by month.
 p4 <- qplot(DepState, data = mda, geom = "bar", fill = DepStatus, facets = .~ Date)
